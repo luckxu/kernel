@@ -27,6 +27,7 @@
 #include <linux/wakelock.h>
 #include <linux/interrupt.h>
 #include <asm/irq.h>
+#include <asm/system_info.h>
 #include <linux/suspend.h>
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
@@ -488,14 +489,20 @@ static int get_wifi_addr_vendor(unsigned char *addr)
 	}
 	ret = rk_vendor_read(WIFI_MAC_ID, addr, 6);
 	if (ret != 6 || is_zero_ether_addr(addr)) {
-		LOG("%s: rk_vendor_read wifi mac address failed (%d)\n",
-		    __func__, ret);
 #ifdef CONFIG_WIFI_GENERATE_RANDOM_MAC_ADDR
 		random_ether_addr(addr);
 		LOG("%s: generate random wifi mac address: "
 		    "%02x:%02x:%02x:%02x:%02x:%02x\n",
 		    __func__, addr[0], addr[1], addr[2],
 		    addr[3], addr[4], addr[5]);
+#else
+		addr[0] = ((system_serial_high >> 8) & 0xff) ^ 0x73;
+		addr[1] = ((system_serial_high >> 0) & 0xff) ^ 0x68;
+		addr[2] = ((system_serial_low >> 24) & 0xff) ^ 0x75;
+		addr[3] = ((system_serial_low >> 16) & 0xff) ^ 0x6c;
+		addr[4] = ((system_serial_low >> 8)  & 0xff) ^ 0x61;
+		addr[5] = ((system_serial_low >> 0)  & 0xff) ^ 0x6e;
+#endif
 		ret = rk_vendor_write(WIFI_MAC_ID, addr, 6);
 		if (ret != 0) {
 			LOG("%s: rk_vendor_write"
@@ -504,15 +511,12 @@ static int get_wifi_addr_vendor(unsigned char *addr)
 			memset(addr, 0, 6);
 			return -1;
 		}
-#else
-		return -1;
-#endif
-	} else {
-		LOG("%s: rk_vendor_read wifi mac address: "
-		    "%02x:%02x:%02x:%02x:%02x:%02x\n",
-		    __func__, addr[0], addr[1], addr[2],
-		    addr[3], addr[4], addr[5]);
 	}
+
+	LOG("%s: rk_vendor_read wifi mac address: "
+	    "%02x:%02x:%02x:%02x:%02x:%02x\n",
+	    __func__, addr[0], addr[1], addr[2],
+	    addr[3], addr[4], addr[5]);
 	return 0;
 }
 
