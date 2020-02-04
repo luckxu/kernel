@@ -127,7 +127,7 @@
 &vad {
     status = "okay";
     rockchip,audio-src = <&i2s_8ch_2>;
-    rockchip,det-channel = <3>;
+    rockchip,det-channel = <0>;
     rockchip,mode = <1>;
     rockchip,buffer-time-ms = <200>;
     #sound-dai-cells = <0>;
